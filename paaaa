@@ -1,0 +1,44 @@
+*&---------------------------------------------------------------------*
+*& Report ZAP4
+*&---------------------------------------------------------------------*
+*&
+*&---------------------------------------------------------------------*
+REPORT ZAP4.
+TABLES EINA.
+SELECT INFNR, MATNR, LIFNR, ERDAT, ERNAM, MEINS, TELF1
+  FROM EINA INTO TABLE @DATA(IT_TAB).
+
+LOOP AT IT_TAB INTO DATA(WA_TAB).
+  IF WA_TAB-LIFNR = 'SAP0017'.
+    WA_TAB-TELF1 = 1234567890.
+    Wa_tab-ERDAT = sy-UNAME.
+  ELSEIF WA_TAB-ERNAM = 'SUPPORT'.
+    WA_TAB-TELF1 = 9876543210.
+    wa_tab-ERDAT = '08.12.2025'.
+  ELSEIF WA_TAB-INFNR BETWEEN 5300005487 AND 5300005666.
+    WA_TAB-TELF1 = 0000000000.
+    WA_TAB-erdat = '08.12.2025'.
+  ELSE.
+    WA_TAB-ERNAM = 'Abilash Prabhu'.
+
+  ENDIF.
+ "modify it_tab from wa_tab.
+  modify it_tab from wa_tab transporting telf1 erdat.
+
+ENDLOOP.
+
+wa_tab-INFNR = '59999999999'.
+wa_tab-MATNR = '420223'.
+wa_tab-LIFNR = 'SAP9999'.
+wa_tab-ERDAT = '20251208'.
+wa_tab-ERNAM = 'Abilash Prabhu'.
+Wa_tab-MEINS = 'NOS'.
+wa_tab-TELF1 = '9500977899'.
+
+append wa_tab to it_tab.
+clear wa_tab.
+
+break-point.
+*
+*APPEND WA_TAB TO IT_TAB.
+*CLEAR WA_TAB.
