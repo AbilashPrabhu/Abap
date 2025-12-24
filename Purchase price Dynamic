@@ -1,0 +1,1093 @@
+*&---------------------------------------------------------------------*
+*& Report ZPUR_PO_DEV_REP
+*&---------------------------------------------------------------------*
+*&
+*&---------------------------------------------------------------------*
+REPORT zpur_po_dev_rep1.
+TABLES : zpur_price_mas,zrmmol.
+TYPES : BEGIN OF ty_final,
+          sno        TYPE num6,
+          lifnr      TYPE zpur_price_mas-lifnr,
+          name       TYPE lfa1-name1,
+          werks      TYPE zpur_price_mas-werks,
+          matnr      TYPE zpur_price_mas-matnr,
+          meins      TYPE zpur_price_mas-meins,
+          maktx      TYPE char200,
+          price      TYPE zpur_price_mas-price,
+          std_req    TYPE zrmmol-std_req,
+          mon        TYPE zrmmol-mon,
+          year1      TYPE zrmmol-year1,
+          menge      TYPE zpur_price_mas-price,
+          tot_po_qty TYPE zpur_price_mas-price,
+          lifnr1     TYPE zpur_price_mas-lifnr,
+          name1      TYPE lfa1-name1,
+          price1     TYPE zpur_price_mas-price,
+          price2     TYPE zpur_price_mas-price,
+          price3     TYPE zpur_price_mas-price,
+          price4     TYPE zpur_price_mas-price,
+          price5     TYPE zpur_price_mas-price,
+          price6     TYPE zpur_price_mas-price,
+          price7     TYPE zpur_price_mas-price,
+          price8     TYPE zpur_price_mas-price,
+          price9     TYPE zpur_price_mas-price,
+          price10    TYPE zpur_price_mas-price,
+          price11    TYPE zpur_price_mas-price,
+          price12    TYPE zpur_price_mas-price,
+          price13    TYPE zpur_price_mas-price,
+          price14    TYPE zpur_price_mas-price,
+          price15    TYPE zpur_price_mas-price,
+          price16    TYPE zpur_price_mas-price,
+          price17    TYPE zpur_price_mas-price,
+          price18    TYPE zpur_price_mas-price,
+          price19    TYPE zpur_price_mas-price,
+          price20    TYPE zpur_price_mas-price,
+          price21    TYPE zpur_price_mas-price,
+          price22    TYPE zpur_price_mas-price,
+          price23    TYPE zpur_price_mas-price,
+          price24    TYPE zpur_price_mas-price,
+          price25    TYPE zpur_price_mas-price,
+          price26    TYPE zpur_price_mas-price,
+          price27    TYPE zpur_price_mas-price,
+          price28    TYPE zpur_price_mas-price,
+          price29    TYPE zpur_price_mas-price,
+          price30    TYPE zpur_price_mas-price,
+          price31    TYPE zpur_price_mas-price,
+          price32    TYPE zpur_price_mas-price,
+
+          qty1       TYPE mseg-menge,
+          qty2       TYPE mseg-menge,
+          qty3       TYPE mseg-menge,
+          qty4       TYPE mseg-menge,
+          qty5       TYPE mseg-menge,
+          qty6       TYPE mseg-menge,
+          qty7       TYPE mseg-menge,
+          qty8       TYPE mseg-menge,
+          qty9       TYPE mseg-menge,
+          qty10      TYPE mseg-menge,
+          qty11      TYPE mseg-menge,
+          qty12      TYPE mseg-menge,
+          qty13      TYPE mseg-menge,
+          qty14      TYPE mseg-menge,
+          qty15      TYPE mseg-menge,
+          qty16      TYPE mseg-menge,
+          qty17      TYPE mseg-menge,
+          qty18      TYPE mseg-menge,
+          qty19      TYPE mseg-menge,
+          qty20      TYPE mseg-menge,
+          qty21      TYPE mseg-menge,
+          qty22      TYPE mseg-menge,
+          qty23      TYPE mseg-menge,
+          qty24      TYPE mseg-menge,
+          qty25      TYPE mseg-menge,
+          qty26      TYPE mseg-menge,
+          qty27      TYPE mseg-menge,
+          qty28      TYPE mseg-menge,
+          qty29      TYPE mseg-menge,
+          qty30      TYPE mseg-menge,
+          qty31      TYPE mseg-menge,
+          qty32      TYPE mseg-menge,
+          tot_val    TYPE p LENGTH 13 DECIMALS 2,
+        END OF ty_final.
+
+DATA: it_final TYPE STANDARD TABLE OF ty_final,
+      wa_final TYPE ty_final.
+DATA: it_final1 TYPE STANDARD TABLE OF ty_final,
+      wa_final1 TYPE ty_final.
+
+TYPES : BEGIN OF ty_mseg,
+          mblnr TYPE mseg-mblnr,
+          matnr TYPE mseg-matnr,
+          menge TYPE mseg-menge,
+          budat TYPE mseg-budat_mkpf,
+          price TYPE zpur_price_mas-price,
+          dmbtr TYPE mseg-dmbtr,
+          werks TYPE mseg-werks,
+          lifnr TYPE mseg-lifnr,
+        END OF ty_mseg.
+
+DATA:it_grn   TYPE STANDARD TABLE OF ty_mseg,
+     lt_lines TYPE STANDARD TABLE OF ty_mseg,
+     wa_grn   TYPE ty_mseg.
+
+
+TYPES : BEGIN OF ty_drill,
+          sno   TYPE num6,
+          lifnr TYPE mseg-lifnr,
+          name  TYPE lfa1-name1,
+          bezei TYPE t005u-bezei,
+        END OF ty_drill.
+
+DATA:it_drill TYPE STANDARD TABLE OF ty_drill,
+     wa_drill TYPE ty_drill.
+
+
+DATA : lt_lines1 TYPE STANDARD TABLE OF tline,
+       lv_string TYPE char200,
+       lv_matnr  TYPE thead-tdname.
+
+DATA : it_fieldcat TYPE slis_t_fieldcat_alv,
+       wa_fieldcat TYPE slis_fieldcat_alv.
+
+DATA: it_fcat_drill TYPE slis_t_fieldcat_alv,
+      wa_fcat_drill TYPE slis_fieldcat_alv.
+
+
+DATA: gt_layout TYPE slis_layout_alv.
+
+DATA : count TYPE num6.
+
+SELECTION-SCREEN BEGIN OF BLOCK b1 WITH FRAME TITLE TEXT-001.
+
+  SELECT-OPTIONS : s_werks FOR zpur_price_mas-werks,
+                   s_matnr FOR zpur_price_mas-matnr.
+
+  PARAMETERS p_year TYPE zsales_plan_head-zyear OBLIGATORY MODIF ID 123 .
+  PARAMETERS p_month TYPE zsales_plan_head-zmonth  OBLIGATORY AS LISTBOX VISIBLE LENGTH 15 USER-COMMAND abc  MODIF ID 123 .
+  SELECTION-SCREEN BEGIN OF LINE.
+    SELECTION-SCREEN COMMENT 1(31) TEXT-s01 FOR FIELD p_frdate MODIF ID 125.
+    PARAMETERS: p_frdate TYPE datum MODIF ID 125 .
+    SELECTION-SCREEN COMMENT 44(13) TEXT-s02 FOR FIELD p_todate MODIF ID 125.
+    PARAMETERS: p_todate TYPE datum  MODIF ID 125.
+  SELECTION-SCREEN END OF LINE.
+
+SELECTION-SCREEN END OF BLOCK b1.
+
+SELECTION-SCREEN BEGIN OF BLOCK b2 WITH FRAME TITLE TEXT-002.
+  PARAMETERS: P_Price RADIOBUTTON GROUP g1 DEFAULT 'X',
+              P_Suplr RADIOBUTTON GROUP g1.
+SELECTION-SCREEN END OF BLOCK b2.
+
+
+AT SELECTION-SCREEN OUTPUT.
+  PERFORM screen_modify.
+
+START-OF-SELECTION.
+  IF P_Price IS NOT INITIAL.
+    PERFORM get_data.
+    PERFORM field_cat.
+    PERFORM display_data.
+  ELSEIF P_Suplr IS NOT INITIAL.
+    PERFORM get_data1.
+  PERFORM field_cat.
+  PERFORM display_data.
+  ENDIF.
+
+*&---------------------------------------------------------------------*
+*& Form get_data
+*&---------------------------------------------------------------------*
+*& text
+*&---------------------------------------------------------------------*
+*& -->  p1        text
+*& <--  p2        text
+*&---------------------------------------------------------------------*
+FORM get_data .
+
+  SELECT
+   m~mblnr,
+   m~zeile,
+   m~matnr,
+   m~dmbtr,
+   m~menge,
+   m~bwart,
+   m~werks,
+   m~budat_mkpf,
+   a~mon     ,
+   a~year1   ,
+   a~std_req ,
+   b~MATNR_i AS d ,
+   b~bsart   ,
+   b~ebeln   ,
+   c~maktx   ,
+   c~price   ,
+   c~lifnr   ,
+   d~meins   ,
+   e~name1
+  FROM mseg AS m LEFT OUTER JOIN zrmmol AS a ON ( m~matnr = a~matnr AND m~werks = a~werks AND a~up_date BETWEEN @p_frdate AND @p_todate )
+  INNER JOIN  wb2_v_ekko_ekpo2 AS b ON ( m~matnr = b~matnr_i AND m~werks = b~werks_i AND m~ebeln = b~ebeln_i AND m~ebelp = b~ebelp_i )
+  LEFT OUTER JOIN  zpur_price_mas AS c ON  ( m~matnr = c~matnr AND m~werks =  c~werks )
+  LEFT OUTER JOIN  mara AS d ON  ( m~matnr = d~matnr  )
+  LEFT OUTER JOIN  lfa1 AS e ON  ( c~lifnr = e~lifnr  )
+  WHERE m~werks IN @s_werks AND m~matnr IN @s_matnr AND
+  m~budat_mkpf BETWEEN @p_frdate AND @p_todate AND m~bwart = '101' AND b~bsart IN ( 'ZIMP' , 'ZDOM' ) AND b~loekz = ' ' INTO TABLE @DATA(it_fin).
+
+  IF it_fin IS NOT INITIAL.
+    SELECT mblnr , zeile , lfbnr  , lfpos , lifnr ,matnr  FROM mseg  FOR ALL ENTRIES IN @it_fin WHERE
+      lfbnr = @it_fin-mblnr AND  lfpos =  @it_fin-zeile AND  lifnr = @it_fin-lifnr AND matnr = @it_fin-matnr
+       AND bwart IN (  '102' , '122' ) INTO TABLE @DATA(it_ch1).
+  ENDIF.
+
+  SORT it_fin BY matnr ASCENDING.
+  DELETE ADJACENT DUPLICATES FROM it_fin COMPARING matnr.
+
+  IF it_fin IS NOT INITIAL.
+*    SELECT
+*      mblnr,
+*      zeile,
+*      matnr,
+*      lifnr,
+*      dmbtr  ,
+*      menge,
+*      bwart,
+*      meins,
+*      werks,
+*      budat_mkpf
+*    FROM mseg FOR ALL ENTRIES IN @it_fin
+*    WHERE  matnr = @it_fin-matnr AND werks = @it_fin-werks AND bwart = '101' AND budat_mkpf BETWEEN @p_frdate AND @p_todate
+*    INTO TABLE @DATA(it_mseg) .
+
+    SELECT
+      mblnr,
+      zeile,
+      matnr,
+      lifnr,
+      dmbtr  ,
+      menge,
+      bwart,
+      meins,
+      werks,
+      budat_mkpf,
+      ebeln
+    FROM mseg FOR ALL ENTRIES IN @it_fin
+    WHERE  matnr = @it_fin-matnr AND werks = @it_fin-werks AND bwart = '101' AND budat_mkpf BETWEEN @p_frdate AND @p_todate
+      and ebeln in ( select ebeln from ekko where bsart in ( 'ZIMP' , 'ZDOM' ) )
+    INTO TABLE @DATA(it_mseg) .
+  ENDIF.
+
+  IF it_mseg IS NOT INITIAL.
+    SELECT mblnr , zeile , lfbnr  , lfpos , lifnr ,matnr  FROM mseg  FOR ALL ENTRIES IN @it_mseg WHERE
+      lfbnr = @it_mseg-mblnr AND  lfpos =  @it_mseg-zeile AND  lifnr = @it_mseg-lifnr AND matnr = @it_mseg-matnr
+       AND bwart IN (  '102' , '122' ) INTO TABLE @DATA(it_ch).
+  ENDIF.
+
+
+  LOOP AT it_mseg INTO DATA(wa_mseg).
+
+    READ TABLE it_ch INTO DATA(wa_ch) WITH KEY lfbnr = wa_mseg-mblnr lfpos =  wa_mseg-zeile lifnr = wa_mseg-lifnr matnr = wa_mseg-matnr.
+    IF  wa_ch-lfbnr <> wa_mseg-mblnr.
+      wa_grn-mblnr  = wa_mseg-mblnr.
+      wa_grn-matnr  = wa_mseg-matnr.
+      wa_grn-menge  = wa_mseg-menge.
+      wa_grn-budat  = wa_mseg-budat_mkpf.
+      wa_grn-dmbtr  = wa_mseg-dmbtr / 100.
+      wa_grn-werks  = wa_mseg-werks.
+      wa_grn-price  =  wa_grn-dmbtr / wa_grn-menge .
+      APPEND wa_grn TO it_grn.
+      CLEAR wa_grn.
+    ENDIF.
+  ENDLOOP.
+
+
+  LOOP AT it_fin INTO DATA(wa_fin).
+    READ TABLE it_ch1 INTO DATA(wa_ch1) WITH KEY lfbnr = wa_fin-mblnr lfpos =  wa_fin-zeile lifnr = wa_fin-lifnr matnr = wa_fin-matnr.
+    IF  wa_ch1-lfbnr <> wa_mseg-mblnr.
+
+      count = count + 1.
+      wa_final-sno = count.
+      wa_final-werks    = wa_fin-werks  .
+      wa_final-matnr    = wa_fin-matnr  .
+      wa_final-maktx    = wa_fin-maktx  .
+      wa_final-meins    = wa_fin-meins  .
+      wa_final-price    = wa_fin-price  .
+      wa_final-mon      = wa_fin-mon    .
+      wa_final-year1    = wa_fin-year1  .
+      wa_final-std_req  = wa_fin-std_req.
+      wa_final-lifnr    = wa_fin-lifnr.
+      wa_final-name     = wa_fin-name1.
+
+
+      """"""  Material Long Text """""""""""""""""""""'''
+      lv_matnr = wa_final-matnr.
+
+      CLEAR wa_final-maktx.
+      CLEAR lv_string.
+      REFRESH lt_lines.
+      CALL FUNCTION 'READ_TEXT'
+        EXPORTING
+          client                  = sy-mandt
+          id                      = 'GRUN'
+          language                = sy-langu
+          name                    = lv_matnr
+          object                  = 'MATERIAL'
+        TABLES
+          lines                   = lt_lines1
+        EXCEPTIONS
+          id                      = 1
+          language                = 2
+          name                    = 3
+          not_found               = 4
+          object                  = 5
+          reference_check         = 6
+          wrong_access_to_archive = 7
+          OTHERS                  = 8.
+      IF sy-subrc = 0.
+        LOOP AT lt_lines1 ASSIGNING FIELD-SYMBOL(<ls_lines01>).
+          CONCATENATE lv_string <ls_lines01>-tdline INTO lv_string .
+        ENDLOOP.
+      ENDIF.
+
+      REPLACE ALL OCCURRENCES OF '<(>&<)>' IN lv_string WITH '&'.
+
+      IF lv_string IS NOT INITIAL.
+        wa_final-maktx = lv_string.
+      ENDIF.
+
+      IF wa_final-maktx IS INITIAL.
+        SELECT SINGLE maktx FROM makt INTO wa_final-maktx WHERE matnr = wa_final-matnr AND spras = 'E' .
+      ENDIF.
+
+      SELECT SUM( menge ) AS f
+      FROM @it_grn AS f
+      WHERE matnr = @wa_final-matnr AND werks = @wa_final-werks AND price = @wa_final-price INTO TABLE @DATA(result1) .
+
+      READ TABLE result1 INTO DATA(wax) INDEX 1.
+      wa_final-menge = wax-f.
+
+
+      SELECT SUM( menge ) AS f
+      FROM @it_grn AS f
+      WHERE matnr = @wa_final-matnr AND werks = @wa_final-werks  INTO TABLE @DATA(result2) .
+
+      READ TABLE result2 INTO DATA(wax2) INDEX 1.
+      wa_final-tot_po_qty = wax2-f.
+
+
+      LOOP AT it_grn INTO DATA(ls_grn) WHERE matnr = wa_fin-matnr AND werks = wa_fin-werks.
+        APPEND ls_grn TO lt_lines.
+      ENDLOOP.
+      " totals & std qty & excess
+      DATA(lv_tot_qty) = 0.
+      DATA(lv_qty_std) = 0.
+      DATA(lv_excess_val) = 0.
+
+      " distinct prices greater than std price
+      DATA: lt_prices TYPE STANDARD TABLE OF zpur_price_mas-price WITH EMPTY KEY.
+      CLEAR lt_prices.
+      LOOP AT lt_lines INTO DATA(ls_line) WHERE price > wa_final-price.
+        APPEND ls_line-price TO lt_prices.
+      ENDLOOP.
+      SORT lt_prices BY table_line ASCENDING.
+      DELETE ADJACENT DUPLICATES FROM lt_prices.
+
+      DATA(lv_index) = 0.
+      LOOP AT lt_prices INTO DATA(lv_price).
+        lv_index = lv_index + 1.
+        IF lv_index > 32.
+          EXIT.
+        ENDIF.
+        DATA(lv_qty) = 0.
+        LOOP AT lt_lines INTO ls_line WHERE price = lv_price.
+          lv_qty = lv_qty + ls_line-menge.
+        ENDLOOP.
+
+        CASE lv_index.
+          WHEN 1.  wa_final-price1  = lv_price. wa_final-qty1  = lv_qty.
+          WHEN 2.  wa_final-price2  = lv_price. wa_final-qty2  = lv_qty.
+          WHEN 3.  wa_final-price3  = lv_price. wa_final-qty3  = lv_qty.
+          WHEN 4.  wa_final-price4  = lv_price. wa_final-qty4  = lv_qty.
+          WHEN 5.  wa_final-price5  = lv_price. wa_final-qty5  = lv_qty.
+          WHEN 6.  wa_final-price6  = lv_price. wa_final-qty6  = lv_qty.
+          WHEN 7.  wa_final-price7  = lv_price. wa_final-qty7  = lv_qty.
+          WHEN 8.  wa_final-price8  = lv_price. wa_final-qty8  = lv_qty.
+          WHEN 9.  wa_final-price9  = lv_price. wa_final-qty9  = lv_qty.
+          WHEN 10. wa_final-price10 = lv_price. wa_final-qty10 = lv_qty.
+          WHEN 11. wa_final-price11 = lv_price. wa_final-qty11 = lv_qty.
+          WHEN 12. wa_final-price12 = lv_price. wa_final-qty12 = lv_qty.
+          WHEN 13. wa_final-price13 = lv_price. wa_final-qty13 = lv_qty.
+          WHEN 14. wa_final-price14 = lv_price. wa_final-qty14 = lv_qty.
+          WHEN 15. wa_final-price15 = lv_price. wa_final-qty15 = lv_qty.
+          WHEN 16. wa_final-price16 = lv_price. wa_final-qty16 = lv_qty.
+          WHEN 17. wa_final-price17 = lv_price. wa_final-qty17 = lv_qty.
+          WHEN 18. wa_final-price18 = lv_price. wa_final-qty18 = lv_qty.
+          WHEN 19. wa_final-price19 = lv_price. wa_final-qty19 = lv_qty.
+          WHEN 20. wa_final-price20 = lv_price. wa_final-qty20 = lv_qty.
+          WHEN 21. wa_final-price21 = lv_price. wa_final-qty21 = lv_qty.
+          WHEN 22. wa_final-price22 = lv_price. wa_final-qty22 = lv_qty.
+          WHEN 23. wa_final-price23 = lv_price. wa_final-qty23 = lv_qty.
+          WHEN 24. wa_final-price24 = lv_price. wa_final-qty24 = lv_qty.
+          WHEN 25. wa_final-price25 = lv_price. wa_final-qty25 = lv_qty.
+          WHEN 26. wa_final-price26 = lv_price. wa_final-qty26 = lv_qty.
+          WHEN 27. wa_final-price27 = lv_price. wa_final-qty27 = lv_qty.
+          WHEN 28. wa_final-price28 = lv_price. wa_final-qty28 = lv_qty.
+          WHEN 29. wa_final-price29 = lv_price. wa_final-qty29 = lv_qty.
+          WHEN 30. wa_final-price30 = lv_price. wa_final-qty30 = lv_qty.
+          WHEN 31. wa_final-price31 = lv_price. wa_final-qty31 = lv_qty.
+          WHEN 32. wa_final-price32 = lv_price. wa_final-qty32 = lv_qty.
+        ENDCASE.
+      ENDLOOP.
+
+      DATA: lv_totval TYPE p LENGTH 13 DECIMALS 2.
+
+      lv_totval = ( ( wa_final-qty1 * wa_final-price1 ) + ( wa_final-qty2 * wa_final-price2   ) + ( wa_final-qty3 * wa_final-price3   ) +
+                         ( wa_final-qty4 * wa_final-price4   ) + ( wa_final-qty5 * wa_final-price5   ) + ( wa_final-qty6 * wa_final-price6   ) +
+                         ( wa_final-qty7 * wa_final-price7   ) + ( wa_final-qty8 * wa_final-price8   ) + ( wa_final-qty9 * wa_final-price9   ) +
+                         ( wa_final-qty10 * wa_final-price10 ) + ( wa_final-qty11 * wa_final-price11 ) + ( wa_final-qty12 * wa_final-price12 ) +
+                         ( wa_final-qty13 * wa_final-price13 ) + ( wa_final-qty14 * wa_final-price14 ) + ( wa_final-qty15 * wa_final-price15 ) +
+                         ( wa_final-qty16 * wa_final-price16 ) + ( wa_final-qty17 * wa_final-price17 ) + ( wa_final-qty18 * wa_final-price18 ) +
+                         ( wa_final-qty19 * wa_final-price19 ) + ( wa_final-qty20 * wa_final-price20 ) + ( wa_final-qty21 * wa_final-price21 ) +
+                         ( wa_final-qty22 * wa_final-price22 ) + ( wa_final-qty23 * wa_final-price23 ) + ( wa_final-qty24 * wa_final-price24 ) +
+                         ( wa_final-qty25 * wa_final-price25 ) + ( wa_final-qty26 * wa_final-price26 ) + ( wa_final-qty27 * wa_final-price27 ) +
+                         ( wa_final-qty28 * wa_final-price28 ) + ( wa_final-qty29 * wa_final-price29 ) + ( wa_final-qty30 * wa_final-price30 ) +
+                         ( wa_final-qty31 * wa_final-price31 ) + ( wa_final-qty32 * wa_final-price32 ) ) .
+
+      IF lv_totval - ( wa_final-tot_po_qty *  wa_final-price ) GT 0.
+        wa_final-tot_val = lv_totval - ( wa_final-tot_po_qty *  wa_final-price ).
+      ELSE.
+        wa_final-tot_val = 0.
+      ENDIF.
+
+      APPEND wa_final TO it_final.
+      CLEAR : wa_final,wa_fin,lv_qty ,lv_price,ls_line,lt_prices,lt_prices,lt_lines,ls_line,ls_grn,lv_totval.
+    ENDIF.
+  ENDLOOP.
+
+  SORT it_final DESCENDING BY tot_val.
+
+
+ENDFORM.
+
+*&---------------------------------------------------------------------*
+*& Form field_cat
+*&---------------------------------------------------------------------*
+*& text
+*&---------------------------------------------------------------------*
+*& -->  p1        text
+*& <--  p2        text
+*&---------------------------------------------------------------------*
+FORM field_cat .
+
+  gt_layout-zebra = 'X'.                                         "Zebra Color on Output
+  gt_layout-colwidth_optimize = ' '.
+*
+  PERFORM genfcat USING 'SNO'                                    'SNO'   '1' '' '' '' '' ''.
+  PERFORM genfcat USING 'PartNo'                                 'MATNR    '   '1' '' '' '' '' ''.
+  PERFORM genfcat USING 'Description'                            'MAKTX'   '1' '' '' '' '' ''.
+  PERFORM genfcat USING 'UOM'                                    'MEINS'   '1' '' '' '' '' ''.
+  PERFORM genfcat USING 'Primary Source Code'                    'LIFNR'   '1' '' '' '' '' ''.
+  PERFORM genfcat USING 'Primary Source Name'                    'NAME'   '1' '' '' '' '' ''.
+  PERFORM genfcat USING 'Std Price'                              'PRICE'   '1' '' '' '' '' ''.
+  PERFORM genfcat USING 'Plan Qty'                               'STD_REQ'   '1' '' '' '' '' ''.
+  PERFORM genfcat USING 'Qty Agnst Std Price'                  'MENGE'   '1' '' '' '' '' ''.
+  PERFORM genfcat USING 'Tot Pur Qty'                            'TOT_PO_QTY'   '1' '' '' '' '' ''.
+
+  IF P_Price IS NOT INITIAL.
+    DO 32 TIMES.
+      DATA(lv_num) = sy-index.
+      DATA(lv_price_col) = |Price{ lv_num }|.
+      DATA(lv_qty_col)   = |Qty{ lv_num }|.
+
+      " Only append columns if at least one row has value
+      DATA(lv_has_value) = abap_false.
+      LOOP AT it_final INTO DATA(wa_final_row).
+        ASSIGN COMPONENT lv_price_col OF STRUCTURE wa_final_row TO FIELD-SYMBOL(<fs_price>).
+        IF <fs_price> IS ASSIGNED AND <fs_price> <> 0.
+          lv_has_value = abap_true.
+          EXIT.
+        ENDIF.
+      ENDLOOP.
+
+      IF lv_has_value = abap_true.
+        PERFORM genfcat USING lv_price_col lv_price_col '1' '' '' '' '' ''.
+        PERFORM genfcat USING lv_qty_col   lv_qty_col   '1' '' '' '' '' ''.
+      ELSE.
+        EXIT.
+      ENDIF.
+    ENDDO.
+
+    PERFORM genfcat USING 'Excess Value'                            'TOT_VAL'   '1' '' '' '' '' ''.
+  ELSEIF P_Suplr IS NOT INITIAL.
+    PERFORM genfcat USING 'Supplier Code'                    'LIFNR1'   '1' '' '' '' '' ''.
+    PERFORM genfcat USING 'Supplier Name'                    'NAME1'   '1' '' '' '' '' ''.
+    PERFORM genfcat USING 'Price'                            'PRICE1'   '1' '' '' '' '' ''.
+    PERFORM genfcat USING 'Pur.Qty'                          'QTY1'   '1' '' '' '' '' ''.
+  ENDIF.
+
+ENDFORM.
+
+FORM genfcat USING VALUE(p_0122)
+                   VALUE(p_0123)
+                   VALUE(p_0124)
+                   VALUE(p_0125)
+                   VALUE(p_0126)
+                   VALUE(p_0127)
+                   VALUE(p_0128)
+                   VALUE(p_0129).
+
+  wa_fieldcat-seltext_l  = p_0122.
+  wa_fieldcat-fieldname  = p_0123.
+  wa_fieldcat-col_pos    = p_0124.
+  wa_fieldcat-do_sum     = p_0125.
+  wa_fieldcat-no_zero    = 'X'.
+  wa_fieldcat-key        = p_0126.
+  wa_fieldcat-just       = p_0127.
+  wa_fieldcat-lowercase  = p_0128.
+  wa_fieldcat-emphasize  = p_0129.
+
+  APPEND wa_fieldcat TO it_fieldcat.
+  CLEAR wa_fieldcat.
+
+ENDFORM.
+
+*&---------------------------------------------------------------------*
+*& Form display_data
+*&---------------------------------------------------------------------*
+*& text
+*&---------------------------------------------------------------------*
+*& -->  p1        text
+*& <--  p2        text
+*&---------------------------------------------------------------------*
+FORM display_data .
+  CALL FUNCTION 'REUSE_ALV_GRID_DISPLAY'
+    EXPORTING
+      i_callback_program      = sy-repid
+      i_callback_user_command = 'USER_COMMAND'
+      i_callback_top_of_page  = 'TOP_OF_PAGE'
+      is_layout               = gt_layout
+      I_SAVE                  = 'X'
+      it_fieldcat             = it_fieldcat
+    TABLES
+      t_outtab                = it_final
+*   EXCEPTIONS
+*     PROGRAM_ERROR           = 1
+*     OTHERS                  = 2
+    .
+  IF sy-subrc <> 0.
+* Implement suitable error handling here
+  ENDIF.
+
+ENDFORM.
+
+*&---------------------------------------------------------------------*
+*&      Form  top_of_page
+*&---------------------------------------------------------------------*
+*       text
+*----------------------------------------------------------------------*
+FORM top_of_page .
+
+  DATA: lt_header  TYPE slis_t_listheader,
+        wa_header1 TYPE slis_listheader,
+        low        TYPE char10,
+        high       TYPE char10.
+
+  wa_header1-typ  = 'H'.
+  wa_header1-info = 'MN Auto Products Private Limited.' .
+  APPEND wa_header1 TO lt_header.
+  CLEAR wa_header1.
+
+  wa_header1-typ  = 'H'.
+*  wa_header1-key = 'Color : Blue : '.
+  wa_header1-info = 'Purchase Price Deviation Report' .
+
+  APPEND wa_header1 TO lt_header.
+  CLEAR wa_header1.
+
+  wa_header1-typ  = 'S'.
+*  wa_header1-key = 'Date   : '.
+  CONCATENATE 'DATE : ' sy-datum+6(2) '.' sy-datum+4(2) '.' sy-datum(4)' ' ' ' INTO wa_header1-info SEPARATED BY space.
+
+  APPEND wa_header1 TO lt_header.
+  CLEAR: wa_header1.
+
+
+  CALL FUNCTION 'REUSE_ALV_COMMENTARY_WRITE'
+    EXPORTING
+      it_list_commentary = lt_header.
+
+
+ENDFORM.
+
+
+FORM screen_modify .
+
+  IF p_year IS INITIAL.
+    p_year = sy-datum+0(4).
+  ENDIF.
+
+  IF p_month IS NOT INITIAL.
+
+    IF p_month <>  p_frdate+4(2) OR
+       p_year  <>  p_frdate+0(4).
+      CLEAR:  p_frdate, p_todate.
+    ENDIF.
+
+    DATA: lv_date   TYPE sy-datum,
+          lv_frdate TYPE sy-datum,
+          lv_todate TYPE sy-datum.
+
+    CLEAR: lv_date,lv_frdate,lv_frdate.
+
+    CONCATENATE p_year p_month '01' INTO lv_date.
+
+    CALL FUNCTION 'HR_JP_MONTH_BEGIN_END_DATE'
+      EXPORTING
+        iv_date             = lv_date
+      IMPORTING
+        ev_month_begin_date = lv_frdate
+        ev_month_end_date   = lv_todate.
+
+    IF  p_frdate IS INITIAL.
+      p_frdate =  lv_frdate.
+    ENDIF.
+    IF  p_todate IS INITIAL.
+      p_todate =  lv_todate.
+    ENDIF.
+  ENDIF.
+
+  LOOP AT SCREEN.
+    IF  screen-group1 = 125.
+      screen-input = 0.
+      MODIFY SCREEN.
+    ENDIF.
+  ENDLOOP.
+
+ENDFORM.
+
+FORM user_command USING r_ucomm LIKE sy-ucomm
+                         rs_selfield TYPE slis_selfield.
+
+  DATA: lv_field       TYPE string,
+        lv_tabrow      TYPE i,
+        lv_click_price TYPE zpur_price_mas-price,
+        lv_matnr       TYPE mseg-matnr,
+        lv_werks       TYPE mseg-werks.
+
+  CLEAR : it_grn,it_drill,it_fcat_drill[].
+
+  lv_field = rs_selfield-fieldname.
+  lv_tabrow = rs_selfield-tabindex.
+
+  " Only if user clicked on Price columns
+  IF lv_field CP 'PRICE*'.
+
+    READ TABLE it_final INTO DATA(ls_click_row) INDEX lv_tabrow.
+    IF sy-subrc <> 0.
+      MESSAGE 'No row selected' TYPE 'I'.
+      EXIT.
+    ENDIF.
+
+    " Get clicked MATNR, WERKS and price
+    lv_matnr = ls_click_row-matnr.
+    lv_werks = ls_click_row-werks.
+    ASSIGN COMPONENT lv_field OF STRUCTURE ls_click_row TO FIELD-SYMBOL(<fs_price>).
+    IF <fs_price> IS ASSIGNED.
+      lv_click_price = <fs_price>.
+    ELSE.
+      MESSAGE 'No price value found' TYPE 'I'.
+      EXIT.
+    ENDIF.
+
+
+    SELECT mblnr, zeile, matnr, lifnr, dmbtr, menge, bwart, meins ,werks ,budat_mkpf
+      FROM mseg
+      WHERE matnr = @ls_click_row-matnr
+        AND werks = @ls_click_row-werks
+        AND bwart = '101'
+        AND budat_mkpf BETWEEN @p_frdate AND @p_todate
+        INTO TABLE @DATA(it_mseg).
+
+    IF it_mseg IS NOT INITIAL.
+      SELECT mblnr, zeile, lfbnr, lfpos, lifnr, matnr
+        FROM mseg
+        FOR ALL ENTRIES IN @it_mseg
+        WHERE lfbnr = @it_mseg-mblnr
+          AND lfpos = @it_mseg-zeile
+          AND lifnr = @it_mseg-lifnr
+          AND matnr = @it_mseg-matnr
+          AND bwart IN ('102','122')
+          INTO TABLE @DATA(it_ch).
+    ENDIF.
+
+
+    LOOP AT it_mseg INTO DATA(wa_mseg).
+      READ TABLE it_ch INTO DATA(wa_ch)
+        WITH KEY lfbnr = wa_mseg-mblnr
+                 lfpos = wa_mseg-zeile
+                 lifnr = wa_mseg-lifnr
+                 matnr = wa_mseg-matnr.
+      IF sy-subrc <> 0. " Not reversed
+        wa_grn-mblnr = wa_mseg-mblnr.
+        wa_grn-matnr = wa_mseg-matnr.
+        wa_grn-menge = wa_mseg-menge.
+        wa_grn-budat = wa_mseg-budat_mkpf.
+        wa_grn-dmbtr = wa_mseg-dmbtr / 100.
+        wa_grn-werks = wa_mseg-werks.
+        wa_grn-price = wa_grn-dmbtr / wa_grn-menge.
+        wa_grn-lifnr = wa_mseg-lifnr.
+        APPEND wa_grn TO it_grn.
+        CLEAR wa_grn.
+      ENDIF.
+    ENDLOOP.
+
+    " Remove duplicates by LIFNR
+    SORT it_grn BY lifnr price.
+    DELETE ADJACENT DUPLICATES FROM it_grn COMPARING lifnr price.
+
+    CLEAR count.
+    LOOP AT it_grn INTO DATA(wa_grn) WHERE matnr = ls_click_row-matnr AND price =  lv_click_price AND werks = ls_click_row-werks .
+      count = count + 1.
+      wa_drill-sno   = count.
+      wa_drill-lifnr = wa_grn-lifnr.
+      SELECT SINGLE a~name1 b~bezei FROM lfa1 AS a LEFT OUTER JOIN  t005u AS b ON ( a~regio =  b~bland AND a~land1 = b~land1 AND b~spras = 'E' )
+         INTO ( wa_drill-name , wa_drill-bezei ) WHERE lifnr = wa_drill-lifnr.
+      APPEND wa_drill TO it_drill.
+      CLEAR wa_drill.
+    ENDLOOP.
+
+    PERFORM genfcat1 USING 'Sno'                                      'SNO'   '1' '' '' '' '' '' .
+    PERFORM genfcat1 USING 'Supplier Code'                            'LIFNR'   '1' '' '' '' '' '' .
+    PERFORM genfcat1 USING 'Supplier Name'                            'NAME'   '1' '' '' '' '' ''.
+    PERFORM genfcat1 USING 'State'                                    'BEZEI'   '1' '' '' '' '' ''.
+
+    CALL FUNCTION 'REUSE_ALV_GRID_DISPLAY'
+      EXPORTING
+        i_callback_program     = sy-repid
+*       I_CALLBACK_USER_COMMAND = 'USER_COMMAND'
+        i_callback_top_of_page = 'TOP_OF_PAGE'
+        is_layout              = gt_layout
+        it_fieldcat            = it_fcat_drill
+      TABLES
+        t_outtab               = it_drill
+*   EXCEPTIONS
+*       PROGRAM_ERROR          = 1
+*       OTHERS                 = 2
+      .
+    IF sy-subrc <> 0.
+* Implement suitable error handling here
+    ENDIF.
+  ENDIF.
+
+ENDFORM.
+
+FORM genfcat1 USING VALUE(p_0122)
+                   VALUE(p_0123)
+                   VALUE(p_0124)
+                   VALUE(p_0125)
+                   VALUE(p_0126)
+                   VALUE(p_0127)
+                   VALUE(p_0128)
+                   VALUE(p_0129).
+
+  wa_fcat_drill-seltext_l  = p_0122.
+  wa_fcat_drill-fieldname  = p_0123.
+  wa_fcat_drill-col_pos    = p_0124.
+  wa_fcat_drill-do_sum     = p_0125.
+  wa_fcat_drill-no_zero    = 'X'.
+  wa_fcat_drill-key        = p_0126.
+  wa_fcat_drill-just       = p_0127.
+  wa_fcat_drill-lowercase  = p_0128.
+  wa_fcat_drill-emphasize  = p_0129.
+
+  APPEND wa_fcat_drill TO it_fcat_drill.
+  CLEAR wa_fcat_drill.
+
+ENDFORM.
+*&---------------------------------------------------------------------*
+*& Form get_data1
+*&---------------------------------------------------------------------*
+*& text
+*&---------------------------------------------------------------------*
+*& -->  p1        text
+*& <--  p2        text
+*&---------------------------------------------------------------------*
+FORM get_data1 .
+  SELECT
+     m~mblnr,
+     m~zeile,
+     m~matnr,
+     m~dmbtr,
+     m~menge,
+     m~bwart,
+     m~werks,
+     m~budat_mkpf,
+     a~mon     ,
+     a~year1   ,
+     a~std_req ,
+     b~MATNR_i AS d ,
+     b~bsart   ,
+     b~ebeln   ,
+     c~maktx   ,
+     c~price   ,
+     c~lifnr   ,
+     d~meins   ,
+     e~name1
+    FROM mseg AS m LEFT OUTER JOIN zrmmol AS a ON ( m~matnr = a~matnr AND m~werks = a~werks AND a~up_date BETWEEN @p_frdate AND @p_todate )
+    INNER JOIN  wb2_v_ekko_ekpo2 AS b ON ( m~matnr = b~matnr_i AND m~werks = b~werks_i AND m~ebeln = b~ebeln_i AND m~ebelp = b~ebelp_i )
+    LEFT OUTER JOIN  zpur_price_mas AS c ON  ( m~matnr = c~matnr AND m~werks =  c~werks )
+    LEFT OUTER JOIN  mara AS d ON  ( m~matnr = d~matnr  )
+    LEFT OUTER JOIN  lfa1 AS e ON  ( c~lifnr = e~lifnr  )
+    WHERE m~werks IN @s_werks AND m~matnr IN @s_matnr AND
+    m~budat_mkpf BETWEEN @p_frdate AND @p_todate AND m~bwart = '101' AND b~bsart IN ( 'ZIMP' , 'ZDOM' ) AND b~loekz = ' ' INTO TABLE @DATA(it_fin).
+
+  IF it_fin IS NOT INITIAL.
+    SELECT mblnr , zeile , lfbnr  , lfpos , lifnr ,matnr  FROM mseg  FOR ALL ENTRIES IN @it_fin WHERE
+      lfbnr = @it_fin-mblnr AND  lfpos =  @it_fin-zeile AND  lifnr = @it_fin-lifnr AND matnr = @it_fin-matnr
+       AND bwart IN (  '102' , '122' ) INTO TABLE @DATA(it_ch1).
+  ENDIF.
+
+  SORT it_fin BY matnr ASCENDING.
+  DELETE ADJACENT DUPLICATES FROM it_fin COMPARING matnr.
+
+  IF it_fin IS NOT INITIAL.
+*    SELECT
+*      mblnr,
+*      zeile,
+*      matnr,
+*      lifnr,
+*      dmbtr  ,
+*      menge,
+*      bwart,
+*      meins,
+*      werks,
+*      budat_mkpf
+*    FROM mseg FOR ALL ENTRIES IN @it_fin
+*    WHERE  matnr = @it_fin-matnr AND werks = @it_fin-werks AND bwart = '101' AND budat_mkpf BETWEEN @p_frdate AND @p_todate
+*    INTO TABLE @DATA(it_mseg) .
+
+    SELECT
+      mblnr,
+      zeile,
+      matnr,
+      lifnr,
+      dmbtr  ,
+      menge,
+      bwart,
+      meins,
+      werks,
+      budat_mkpf,
+      ebeln
+    FROM mseg FOR ALL ENTRIES IN @it_fin
+    WHERE  matnr = @it_fin-matnr AND werks = @it_fin-werks AND bwart = '101' AND budat_mkpf BETWEEN @p_frdate AND @p_todate
+      and ebeln in ( select ebeln from ekko where bsart in ( 'ZIMP' , 'ZDOM' ) )
+    INTO TABLE @DATA(it_mseg) .
+  ENDIF.
+
+  IF it_mseg IS NOT INITIAL.
+    SELECT mblnr , zeile , lfbnr  , lfpos , lifnr ,matnr  FROM mseg  FOR ALL ENTRIES IN @it_mseg WHERE
+      lfbnr = @it_mseg-mblnr AND  lfpos =  @it_mseg-zeile AND  lifnr = @it_mseg-lifnr AND matnr = @it_mseg-matnr
+       AND bwart IN (  '102' , '122' ) INTO TABLE @DATA(it_ch).
+  ENDIF.
+
+
+  LOOP AT it_mseg INTO DATA(wa_mseg).
+
+    READ TABLE it_ch INTO DATA(wa_ch) WITH KEY lfbnr = wa_mseg-mblnr lfpos =  wa_mseg-zeile lifnr = wa_mseg-lifnr matnr = wa_mseg-matnr.
+    IF  wa_ch-lfbnr <> wa_mseg-mblnr.
+      wa_grn-mblnr  = wa_mseg-mblnr.
+      wa_grn-matnr  = wa_mseg-matnr.
+      wa_grn-lifnr  = wa_mseg-lifnr.
+      wa_grn-menge  = wa_mseg-menge.
+      wa_grn-budat  = wa_mseg-budat_mkpf.
+      wa_grn-dmbtr  = wa_mseg-dmbtr / 100.
+      wa_grn-werks  = wa_mseg-werks.
+      wa_grn-price  =  wa_grn-dmbtr / wa_grn-menge .
+      APPEND wa_grn TO it_grn.
+      CLEAR wa_grn.
+    ENDIF.
+  ENDLOOP.
+
+  SORT it_grn ASCENDING BY matnr lifnr price.
+
+  LOOP AT it_fin INTO DATA(wa_fin).
+    READ TABLE it_ch1 INTO DATA(wa_ch1) WITH KEY lfbnr = wa_fin-mblnr lfpos =  wa_fin-zeile lifnr = wa_fin-lifnr matnr = wa_fin-matnr.
+    IF  wa_ch1-lfbnr <> wa_mseg-mblnr.
+
+      count = count + 1.
+      wa_final-sno = count.
+      wa_final-werks    = wa_fin-werks  .
+      wa_final-matnr    = wa_fin-matnr  .
+      wa_final-maktx    = wa_fin-maktx  .
+      wa_final-meins    = wa_fin-meins  .
+      wa_final-price    = wa_fin-price  .
+      wa_final-mon      = wa_fin-mon    .
+      wa_final-year1    = wa_fin-year1  .
+      wa_final-std_req  = wa_fin-std_req.
+      wa_final-lifnr    = wa_fin-lifnr.
+      wa_final-name     = wa_fin-name1.
+
+
+      """"""  Material Long Text """""""""""""""""""""'''
+      lv_matnr = wa_final-matnr.
+
+      CLEAR wa_final-maktx.
+      CLEAR lv_string.
+      REFRESH lt_lines.
+      CALL FUNCTION 'READ_TEXT'
+        EXPORTING
+          client                  = sy-mandt
+          id                      = 'GRUN'
+          language                = sy-langu
+          name                    = lv_matnr
+          object                  = 'MATERIAL'
+        TABLES
+          lines                   = lt_lines1
+        EXCEPTIONS
+          id                      = 1
+          language                = 2
+          name                    = 3
+          not_found               = 4
+          object                  = 5
+          reference_check         = 6
+          wrong_access_to_archive = 7
+          OTHERS                  = 8.
+      IF sy-subrc = 0.
+        LOOP AT lt_lines1 ASSIGNING FIELD-SYMBOL(<ls_lines01>).
+          CONCATENATE lv_string <ls_lines01>-tdline INTO lv_string .
+        ENDLOOP.
+      ENDIF.
+
+      REPLACE ALL OCCURRENCES OF '<(>&<)>' IN lv_string WITH '&'.
+
+      IF lv_string IS NOT INITIAL.
+        wa_final-maktx = lv_string.
+      ENDIF.
+
+      IF wa_final-maktx IS INITIAL.
+        SELECT SINGLE maktx FROM makt INTO wa_final-maktx WHERE matnr = wa_final-matnr AND spras = 'E' .
+      ENDIF.
+
+      SELECT SUM( menge ) AS f
+      FROM @it_grn AS f
+      WHERE matnr = @wa_final-matnr AND werks = @wa_final-werks AND price = @wa_final-price AND lifnr = @wa_final-lifnr INTO TABLE @DATA(result1) .
+
+      READ TABLE result1 INTO DATA(wax) INDEX 1.
+      wa_final-menge = wax-f.
+
+
+      SELECT SUM( menge ) AS f
+      FROM @it_grn AS f
+      WHERE matnr = @wa_final-matnr AND werks = @wa_final-werks  INTO TABLE @DATA(result2) .
+
+      READ TABLE result2 INTO DATA(wax2) INDEX 1.
+      wa_final-tot_po_qty = wax2-f.
+
+      DATA: lv_totqty TYPE mseg-menge.
+
+*      LOOP AT it_grn INTO DATA(ls_grn) WHERE matnr = wa_fin-matnr AND werks = wa_fin-werks.
+*        LOOP AT it_grn INTO DATA(ls_grn1) WHERE matnr = ls_grn-matnr AND werks = ls_grn-werks AND lifnr = ls_grn-lifnr.
+*          lv_totqty = lv_totqty + ls_grn1-menge.
+*          AT END OF price.
+*            wa_final-lifnr1 = ls_grn1-lifnr.
+*            SELECT SINGLE name1 INTO wa_final-name1 FROM lfa1 WHERE lifnr = wa_final-lifnr1.
+*            wa_final-price1 = ls_grn1-price.
+*            wa_final-qty1 = lv_totqty.
+*            APPEND wa_final TO it_final.
+*            CLEAR: lv_totqty.
+*          ENDAT.
+*        ENDLOOP.
+*      ENDLOOP.
+
+      LOOP AT it_grn INTO DATA(ls_grn)
+           WHERE matnr = wa_fin-matnr
+             AND werks = wa_fin-werks
+           GROUP BY ( lifnr = ls_grn-lifnr price = ls_grn-price )
+           ASCENDING
+           ASSIGNING FIELD-SYMBOL(<group>).
+
+        lv_totqty = 0.
+
+        LOOP AT GROUP <group> ASSIGNING FIELD-SYMBOL(<ls_grn1>).
+          lv_totqty += <ls_grn1>-menge.
+        ENDLOOP.
+
+        wa_final-lifnr1 = <group>-lifnr.
+        SELECT SINGLE name1 INTO wa_final-name1 FROM lfa1 WHERE lifnr = wa_final-lifnr1.
+        wa_final-price1 = <group>-price.
+        wa_final-qty1   = lv_totqty.
+
+        APPEND wa_final TO it_final.
+
+      ENDLOOP.
+
+*      LOOP AT it_grn INTO DATA(ls_grn) WHERE matnr = wa_fin-matnr AND werks = wa_fin-werks.
+*        APPEND ls_grn TO lt_lines.
+*      ENDLOOP.
+*      " totals & std qty & excess
+*      DATA(lv_tot_qty) = 0.
+*      DATA(lv_qty_std) = 0.
+*      DATA(lv_excess_val) = 0.
+*
+*      " distinct prices greater than std price
+*      DATA: lt_prices TYPE STANDARD TABLE OF zpur_price_mas-price WITH EMPTY KEY.
+*      CLEAR lt_prices.
+*      LOOP AT lt_lines INTO DATA(ls_line) WHERE price > wa_final-price.
+*        APPEND ls_line-price TO lt_prices.
+*      ENDLOOP.
+*      SORT lt_prices BY table_line ASCENDING.
+*      DELETE ADJACENT DUPLICATES FROM lt_prices.
+*
+*      DATA(lv_index) = 0.
+*      LOOP AT lt_prices INTO DATA(lv_price).
+*        lv_index = lv_index + 1.
+*        IF lv_index > 32.
+*          EXIT.
+*        ENDIF.
+*        DATA(lv_qty) = 0.
+*        LOOP AT lt_lines INTO ls_line WHERE price = lv_price.
+*          lv_qty = lv_qty + ls_line-menge.
+*        ENDLOOP.
+*
+*        CASE lv_index.
+*          WHEN 1.  wa_final-price1  = lv_price. wa_final-qty1  = lv_qty.
+*          WHEN 2.  wa_final-price2  = lv_price. wa_final-qty2  = lv_qty.
+*          WHEN 3.  wa_final-price3  = lv_price. wa_final-qty3  = lv_qty.
+*          WHEN 4.  wa_final-price4  = lv_price. wa_final-qty4  = lv_qty.
+*          WHEN 5.  wa_final-price5  = lv_price. wa_final-qty5  = lv_qty.
+*          WHEN 6.  wa_final-price6  = lv_price. wa_final-qty6  = lv_qty.
+*          WHEN 7.  wa_final-price7  = lv_price. wa_final-qty7  = lv_qty.
+*          WHEN 8.  wa_final-price8  = lv_price. wa_final-qty8  = lv_qty.
+*          WHEN 9.  wa_final-price9  = lv_price. wa_final-qty9  = lv_qty.
+*          WHEN 10. wa_final-price10 = lv_price. wa_final-qty10 = lv_qty.
+*          WHEN 11. wa_final-price11 = lv_price. wa_final-qty11 = lv_qty.
+*          WHEN 12. wa_final-price12 = lv_price. wa_final-qty12 = lv_qty.
+*          WHEN 13. wa_final-price13 = lv_price. wa_final-qty13 = lv_qty.
+*          WHEN 14. wa_final-price14 = lv_price. wa_final-qty14 = lv_qty.
+*          WHEN 15. wa_final-price15 = lv_price. wa_final-qty15 = lv_qty.
+*          WHEN 16. wa_final-price16 = lv_price. wa_final-qty16 = lv_qty.
+*          WHEN 17. wa_final-price17 = lv_price. wa_final-qty17 = lv_qty.
+*          WHEN 18. wa_final-price18 = lv_price. wa_final-qty18 = lv_qty.
+*          WHEN 19. wa_final-price19 = lv_price. wa_final-qty19 = lv_qty.
+*          WHEN 20. wa_final-price20 = lv_price. wa_final-qty20 = lv_qty.
+*          WHEN 21. wa_final-price21 = lv_price. wa_final-qty21 = lv_qty.
+*          WHEN 22. wa_final-price22 = lv_price. wa_final-qty22 = lv_qty.
+*          WHEN 23. wa_final-price23 = lv_price. wa_final-qty23 = lv_qty.
+*          WHEN 24. wa_final-price24 = lv_price. wa_final-qty24 = lv_qty.
+*          WHEN 25. wa_final-price25 = lv_price. wa_final-qty25 = lv_qty.
+*          WHEN 26. wa_final-price26 = lv_price. wa_final-qty26 = lv_qty.
+*          WHEN 27. wa_final-price27 = lv_price. wa_final-qty27 = lv_qty.
+*          WHEN 28. wa_final-price28 = lv_price. wa_final-qty28 = lv_qty.
+*          WHEN 29. wa_final-price29 = lv_price. wa_final-qty29 = lv_qty.
+*          WHEN 30. wa_final-price30 = lv_price. wa_final-qty30 = lv_qty.
+*          WHEN 31. wa_final-price31 = lv_price. wa_final-qty31 = lv_qty.
+*          WHEN 32. wa_final-price32 = lv_price. wa_final-qty32 = lv_qty.
+*        ENDCASE.
+*      ENDLOOP.
+*
+*      DATA: lv_totval TYPE p LENGTH 13 DECIMALS 2.
+*
+*      lv_totval = ( ( wa_final-qty1 * wa_final-price1 ) + ( wa_final-qty2 * wa_final-price2   ) + ( wa_final-qty3 * wa_final-price3   ) +
+*                         ( wa_final-qty4 * wa_final-price4   ) + ( wa_final-qty5 * wa_final-price5   ) + ( wa_final-qty6 * wa_final-price6   ) +
+*                         ( wa_final-qty7 * wa_final-price7   ) + ( wa_final-qty8 * wa_final-price8   ) + ( wa_final-qty9 * wa_final-price9   ) +
+*                         ( wa_final-qty10 * wa_final-price10 ) + ( wa_final-qty11 * wa_final-price11 ) + ( wa_final-qty12 * wa_final-price12 ) +
+*                         ( wa_final-qty13 * wa_final-price13 ) + ( wa_final-qty14 * wa_final-price14 ) + ( wa_final-qty15 * wa_final-price15 ) +
+*                         ( wa_final-qty16 * wa_final-price16 ) + ( wa_final-qty17 * wa_final-price17 ) + ( wa_final-qty18 * wa_final-price18 ) +
+*                         ( wa_final-qty19 * wa_final-price19 ) + ( wa_final-qty20 * wa_final-price20 ) + ( wa_final-qty21 * wa_final-price21 ) +
+*                         ( wa_final-qty22 * wa_final-price22 ) + ( wa_final-qty23 * wa_final-price23 ) + ( wa_final-qty24 * wa_final-price24 ) +
+*                         ( wa_final-qty25 * wa_final-price25 ) + ( wa_final-qty26 * wa_final-price26 ) + ( wa_final-qty27 * wa_final-price27 ) +
+*                         ( wa_final-qty28 * wa_final-price28 ) + ( wa_final-qty29 * wa_final-price29 ) + ( wa_final-qty30 * wa_final-price30 ) +
+*                         ( wa_final-qty31 * wa_final-price31 ) + ( wa_final-qty32 * wa_final-price32 ) ) .
+*
+*      IF lv_totval - ( wa_final-tot_po_qty *  wa_final-price ) GT 0.
+*        wa_final-tot_val = lv_totval - ( wa_final-tot_po_qty *  wa_final-price ).
+*      ELSE.
+*        wa_final-tot_val = 0.
+*      ENDIF.
+*
+*      APPEND wa_final TO it_final.
+      CLEAR : wa_final,wa_fin,ls_grn,lt_lines.
+*      clear: lv_qty ,lv_price,ls_line,lt_prices,lt_prices,lt_lines,ls_line,lv_totval.
+    ENDIF.
+  ENDLOOP.
+
+  DELETE adjacent duplicates from it_final comparing werks matnr lifnr price lifnr1 price1 menge qty1.
+  SORT it_final ascending BY werks matnr lifnr price lifnr1 price1 menge qty1.
+
+ENDFORM.
